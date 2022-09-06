@@ -14,6 +14,6 @@ Real estate website for Vilnius flats with additional features:
 - Cloud database
 - APIs infrastructure
 
-#### Planned infrastructure:
+#### Planned:
 <img src="./UML/Aruodas_UML.svg">
 

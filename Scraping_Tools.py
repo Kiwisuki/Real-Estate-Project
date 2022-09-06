@@ -11,78 +11,6 @@ import undetected_chromedriver as uc
 from fake_useragent import UserAgent
 from pymongo import MongoClient
 
-OLD_COLS = ['Namo numeris',
- 'Plotas',
- 'Kambarių sk.',
- 'Aukštas',
- 'Aukštų sk.',
- 'Metai',
- 'Pastato tipas',
- 'Šildymas',
- 'Įrengimas',
- 'Ypatybės',
- 'Papildoma įranga',
- 'Nuoroda',
- 'Įdėtas',
- 'Redaguotas',
- 'Įsiminė',
- 'Peržiūrėjo',
- 'Artimiausias darželis',
- 'Artimiausia mokymo įstaiga',
- 'Artimiausia parduotuvė',
- 'Viešojo transporto stotelė',
- 'Address',
- 'Price',
- 'date_scraped',
- 'id',
- 'Real Estate Type',
- 'Comment',
- 'Broker number',
- 'Pastato energijos suvartojimo klasė',
- 'Papildomos patalpos',
- 'Apsauga',
- 'Aktyvus iki',
- 'Owner number',
- 'Buto numeris',
- 'Thumbnail']
-
-NEW_COLS = ['House number',
- 'Area',
- 'Rooms',
- 'Floor',
- 'Floors',
- 'Year',
- 'Building type',
- 'Heating',
- 'Finish',
- 'Misc',
- 'Misc equipment',
- 'Link',
- 'Uploaded',
- 'Edited',
- 'Saved',
- 'Seen',
- 'Kindergarden',
- 'School',
- 'Shop',
- 'Bus',
- 'Address',
- 'Price',
- 'Date scraped',
- 'id',
- 'Real estate type',
- 'Comment',
- 'Broker number',
- 'Energy class',
- 'Additional premises',
- 'Security',
- 'Active until',
- 'Owner number',
- 'Flat number',
- 'Thumbnail',]
-
-class BotDetectedException(Exception):
-    pass
 
 def get_html(link, depth=0):
     """Get html version of page with loaded javascript parts by using undetectable selenium driver
@@ -111,7 +39,7 @@ def get_html(link, depth=0):
             logging.error(f'Get Error: {link}  \n \n {exception}')
             raise exception
 
-def parse_ad(html_text, nt, thumb):
+def parse_ad(html_text, **kwargs):
     """Parses ad for attributes available, except: heating
     Args:
         html_text: html text file saved from website
@@ -134,49 +62,21 @@ def parse_ad(html_text, nt, thumb):
         name = re.sub(' +', ' ', name.text.replace('\n', ' '))
         row[name] = value
 
+    row['Price'] = (soup.find('span', class_='price-eur').text.replace(' ', '')).replace('\n', '')
+
     try:
-        price = (soup.find('span', class_='price-eur').text.replace(' ', '')).replace('\n', '')
-    except Exception as exception:
-        logging.error(f'Error from price detection: {exception}')
-        raise BotDetectedException
-
-    address = re.sub(' +', ' ', soup.find('h1').text.replace('\n', ' '))
-    row['Address'] = address
-    row['Price'] = price
-
-    # Features extraction from thumbs of the ad
-    titles = []
-    ids = []
-    thumbs = soup.find_all(class_='obj-thumb') 
-
-    '''
-    try:
-        for t in thumbs:
-            try:
-                # If thumb has title, it is a photo
-                titles.append(t['title'])
-            except KeyError:
-                try:
-                    # If it has data-type it is misc,- video, maps or 3d tour
-                    ids.append(t['data-type'])
-                except KeyError:
-                    pass
-        last_thumb = titles[-1].split('-')[-1]
-        row['N_photos'] = [int(s) for s in last_thumb.split() if s.isdigit()][0]
-        row['3d_tour'] = ('3d' in ids)
-        row['video'] = ('video' in ids)
-    except IndexError:
-        row['N_photos'] = 0
-        row['3d_tour'] = False
-        row['video'] = False
+        photos = [a['href'] for a in soup.find_all('a', class_='link-obj-thumb')]
+        hidden_photos = [a['href'] for a in soup.find_all('a', class_='link-obj-thumb hide')]
+        photos.extend(hidden_photos)
+        photos = list(filter(lambda x: 'img.dgn' in x, photos))
+        row['Photos'] = list(set(photos))
+    except Exception:
         sold = soup.find_all(class_='adv-sold1-lt')
-        row['sold'] = len(sold) > 0
-    '''
+        row['Sold'] = len(sold) > 0
 
 
-    row['date_scraped'] = datetime.today().strftime('%Y-%m-%d')
-    row['id'] = row['Nuoroda'].split('/')[1]
-    row['Real Estate Type'] = nt
+    row['Date scraped'] = datetime.today().strftime('%Y-%m-%d')
+    row['Id'] = row['Nuoroda'].split('/')[1]
     
 
     try:
@@ -194,7 +94,10 @@ def parse_ad(html_text, nt, thumb):
             logging.warning(f'No phone number for {row["Nuoroda"]}')
 
 
-    row['Thumbnail'] = thumb
+
+    for key, value in kwargs.items():
+        row[key] = value
+
     logging.debug(f'Row parsed successfully')
     return row
 
@@ -298,24 +201,14 @@ def get_ids(nt):
         collection = db[nt]
         return [x['id'] for x in collection.find({}, {'id':1, '_id':0})]
 
-def prep_row(row):
-    prepped_row = {}
-    for old, new in zip(OLD_COLS, NEW_COLS):
-        try:
-            prepped_row[new] = row[old]
-        except KeyError:
-            prepped_row[new] = np.nan
-    return prepped_row
-
-def scrape_ad(link, nt, thumb, save_to_db=True):
+def scrape_ad(link, **kwargs):
     txt = get_html(link)
-    row = parse_ad(txt, nt, thumb)
-    row = prepoc_row(row)
-    row = prep_row(row)
-    if save_to_db:
-        with MongoClient("mongodb+srv://Kiwisuki:slaptazodis@real-estate.aaszr.mongodb.net/?retryWrites=true&w=majority") as cluster:
-            db = cluster['Real-Estate']
-            collection = db[nt]
-            collection.insert_one(row)
+    row = parse_ad(txt, **kwargs)
     logging.info(f'Scraped {link}')
     return row
+
+def insert_to_db(row, db_name, collection_name, user='Kiwisuki', password='slaptazodis'):
+    with MongoClient(f"mongodb+srv://{user}:{password}@real-estate.aaszr.mongodb.net/?retryWrites=true&w=majority") as cluster:
+        db = cluster[db_name]
+        collection = db[collection_name]
+        collection.insert_one(row)
