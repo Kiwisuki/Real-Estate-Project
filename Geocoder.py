@@ -15,6 +15,12 @@ warnings.filterwarnings('ignore')
 reload(logging)
 logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s', level=logging.DEBUG, datefmt='%I:%M:%S')
 
+USER = 'Kiwisuki'
+PASSWORD = 'slaptazodis'
+DB_NAME = 'Real-Estate'
+RAW_DATABASE = f"mongodb+srv://{USER}:{PASSWORD}@real-estate.cduph5g.mongodb.net/?retryWrites=true&w=majority"
+PROCCESSED_DATABASE = f"mongodb+srv://{USER}:{PASSWORD}@real-estate.cduph5g.mongodb.net/?retryWrites=true&w=majority"
+
 
 def fix_address(x):
     temp = x.split(',')

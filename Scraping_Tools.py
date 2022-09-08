@@ -12,6 +12,13 @@ from fake_useragent import UserAgent
 from pymongo import MongoClient
 
 
+USER = 'Kiwisuki'
+PASSWORD = 'slaptazodis'
+DB_NAME = 'Real-Estate'
+RAW_DATABASE = f"mongodb+srv://{USER}:{PASSWORD}@real-estate.cduph5g.mongodb.net/?retryWrites=true&w=majority"
+PROCCESSED_DATABASE = f"mongodb+srv://{USER}:{PASSWORD}@real-estate.cduph5g.mongodb.net/?retryWrites=true&w=majority"
+
+
 def get_html(link, depth=0):
     """Get html version of page with loaded javascript parts by using undetectable selenium driver
     Args:
@@ -62,6 +69,7 @@ def parse_ad(html_text, **kwargs):
         name = re.sub(' +', ' ', name.text.replace('\n', ' '))
         row[name] = value
 
+    row['Address'] = re.sub(' +', ' ', soup.find('h1').text.replace('\n', ' '))
     row['Price'] = (soup.find('span', class_='price-eur').text.replace(' ', '')).replace('\n', '')
 
     try:
@@ -131,7 +139,7 @@ def get_last_page(html_text):
     soup = bs4.BeautifulSoup(html_text, 'html.parser')
     result = int(soup.find_all(class_='page-bt')[-2].text.replace(' ', '').replace('\n', ''))
     logging.info(f'Last page found: {result}')
-    return result
+    return 1
 
 def is_link_used(link, scraped_ids):
     # Helper method
@@ -147,20 +155,25 @@ def is_valid_url(url):
             r'(?:/?|[/?]\S+)$', re.IGNORECASE)
     return re.match(regex, url) is not None
 
-def filter_links(links, scraped_ids):
+def filter_links(links, thumbs, scraped_ids):
     try:
         scraped_ids = np.array(scraped_ids)
         links = np.array(links)
+        thumbs = np.array(thumbs)
+
         
         bool_arr = np.array([is_link_used(row, scraped_ids) for row in links])
         links = links[bool_arr]
+        thumbs = thumbs[bool_arr]
+
         
         bool_arr = np.array([is_valid_url(row) for row in links])
         links = links[bool_arr]
+        thumbs = thumbs[bool_arr]
     except IndexError:
         return []
 
-    return list(links)
+    return list(links), list(thumbs)
 
 def scrape_type_links(nt):
     """Scrapes and returns all ad links found on all city pages
@@ -187,19 +200,11 @@ def scrape_type_links(nt):
         city_thumbs.extend(thumbs)
     return city_links, city_thumbs
 
-def prepoc_row(row):
-    new = {}
-    for key in row:
-        if type(row[key]) is str:
-            new_key = " ".join(key.split()).replace(':','')
-            new[new_key] = " ".join(row[key].split())
-    return new
-
 def get_ids(nt):
-    with MongoClient("mongodb+srv://Kiwisuki:slaptazodis@real-estate.aaszr.mongodb.net/?retryWrites=true&w=majority") as cluster:
-        db = cluster['Real-Estate']
+    with MongoClient(RAW_DATABASE) as cluster:
+        db = cluster[DB_NAME]
         collection = db[nt]
-        return [x['id'] for x in collection.find({}, {'id':1, '_id':0})]
+        return [x['Id'] for x in collection.find({}, {'Id':1, '_id':0})]
 
 def scrape_ad(link, **kwargs):
     txt = get_html(link)
@@ -207,8 +212,15 @@ def scrape_ad(link, **kwargs):
     logging.info(f'Scraped {link}')
     return row
 
-def insert_to_db(row, db_name, collection_name, user='Kiwisuki', password='slaptazodis'):
-    with MongoClient(f"mongodb+srv://{user}:{password}@real-estate.aaszr.mongodb.net/?retryWrites=true&w=majority") as cluster:
-        db = cluster[db_name]
+def insert_to_db(row, collection_name, DATABASE=RAW_DATABASE):
+    with MongoClient(DATABASE) as cluster:
+        db = cluster[DB_NAME]
         collection = db[collection_name]
         collection.insert_one(row)
+
+def prepoc_row(row):
+    new = {}
+    for key, value in row.items():
+        new_key = " ".join(key.split()).replace(':','')
+        new[new_key] = value
+    return new
