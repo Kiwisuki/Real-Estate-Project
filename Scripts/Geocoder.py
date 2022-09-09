@@ -1,4 +1,3 @@
-
 import time
 import math
 import logging
@@ -20,7 +19,7 @@ USER = 'Kiwisuki'
 PASSWORD = 'slaptazodis'
 DB_NAME = 'Real-Estate'
 RAW_DATABASE = f"mongodb+srv://{USER}:{PASSWORD}@real-estate.cduph5g.mongodb.net/?retryWrites=true&w=majority"
-PROCCESSED_DATABASE = f"mongodb+srv://{USER}:{PASSWORD}@real-estate.aaszr.mongodb.net/?retryWrites=true&w=majority"
+PROCCESSED_DATABASE = f"mongodb+srv://{USER}:{PASSWORD}@real-estate.cduph5g.mongodb.net/?retryWrites=true&w=majority"
 
 
 def fix_address(x):
@@ -56,12 +55,16 @@ def main():
     while True:
         while get_count() > 0:
             for category in nts:
-                cluster = MongoClient(PROCCESSED_DATABASE)
+                cluster = MongoClient('mongodb+srv://Kiwisuki:slaptazodis@real-estate.aaszr.mongodb.net/?retryWrites=true&w=majority')
                 db = cluster['Real-Estate']
                 collection = db[category]
-                df = pd.DataFrame([i for i in collection.find({ "Latitude" : { "$exists" : False },  "Longitude" : { "$exists" : False } }).limit(10)])
+                df = pd.DataFrame([i for i in collection.find({ "Latitude" : { "$exists" : False },  "Longitude" : { "$exists" : False } }).limit(5)])
                 if len(df) == 0:
                     continue
+                df['House number'].fillna('', inplace=True)
+                df['Address'] = df['Address'].apply(lambda s : s.split('.')[0] + '.')
+                df['Address'] = df['Address'] + ' ' + df['House number']
+
                 geolocator = Nominatim(user_agent="Aruodas_predictor")
                 geocode = RateLimiter(geolocator.geocode, min_delay_seconds=1)
                 df['Location'] = df['Address'].apply(geocode)            
