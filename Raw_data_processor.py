@@ -1,13 +1,17 @@
 from pymongo import MongoClient
-from Raw_Data_Proccessing_Tools import process_df
+from raw_data_processing_tools import process_df
 import pandas as pd
+import logging
+
+logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s', level=logging.INFO, datefmt='%I:%M:%S')
+
 
 USER = 'Kiwisuki'
 PASSWORD = 'slaptazodis'
 DB_NAME = 'Real-Estate'
 RAW_DATABASE = f"mongodb+srv://{USER}:{PASSWORD}@real-estate.cduph5g.mongodb.net/?retryWrites=true&w=majority"
 PROCCESSED_DATABASE = f"mongodb+srv://{USER}:{PASSWORD}@real-estate.aaszr.mongodb.net/?retryWrites=true&w=majority"
-AD_TYPES = ['butai/vilniuje', 'butu-nuoma']
+AD_TYPES = ['butai/vilniuje', 'butu-nuoma/vilniuje']
 
 
 def get_unprocessed_rows(ad_type, n_rows):
@@ -38,6 +42,7 @@ def processing_epoch():
         df = df.drop('_id', axis=1)
         rows = df.to_dict(orient='records')
         insert_rows(rows, ad_type)
+        logging.info(f'Processed 10 rows, Ad type: {ad_type}')
 
 if __name__ == '__main__':
     while True:
