@@ -139,7 +139,7 @@ def get_last_page(html_text):
     soup = bs4.BeautifulSoup(html_text, 'html.parser')
     result = int(soup.find_all(class_='page-bt')[-2].text.replace(' ', '').replace('\n', ''))
     logging.info(f'Last page found: {result}')
-    return 1
+    return result
 
 def is_link_used(link, scraped_ids):
     # Helper method
