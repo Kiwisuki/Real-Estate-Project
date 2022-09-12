@@ -139,7 +139,7 @@ def get_last_page(html_text):
     soup = bs4.BeautifulSoup(html_text, 'html.parser')
     result = int(soup.find_all(class_='page-bt')[-2].text.replace(' ', '').replace('\n', ''))
     logging.info(f'Last page found: {result}')
-    return 1
+    return result
 
 def is_link_used(link, scraped_ids):
     # Helper method
@@ -156,6 +156,7 @@ def is_valid_url(url):
     return re.match(regex, url) is not None
 
 def filter_links(links, thumbs, scraped_ids):
+    before = len(links)
     try:
         scraped_ids = np.array(scraped_ids)
         links = np.array(links)
@@ -171,8 +172,10 @@ def filter_links(links, thumbs, scraped_ids):
         links = links[bool_arr]
         thumbs = thumbs[bool_arr]
     except IndexError:
-        return []
-
+        links = []
+        thumbs = []
+    after = len(links)
+    logging.debug(f'Before filter: {before}, after: {after}, filtered {before - after} rows')
     return list(links), list(thumbs)
 
 def scrape_type_links(nt):

@@ -1,7 +1,7 @@
 import logging
 import random
 from importlib import reload
-from Scraping_Tools import *
+from scraping_tools import *
 
 reload(logging)
 logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s', level=logging.DEBUG, datefmt='%I:%M:%S')
@@ -11,7 +11,7 @@ def main():
     while True:
         for nt in nts:
             links, thumbs = scrape_type_links(nt)
-            #links, thumbs = filter_links(links, thumbs, get_ids(nt))
+            links, thumbs = filter_links(links, thumbs, get_ids(nt))
             random.shuffle(links)
             count = 0
             for link, thumb in zip(links, thumbs):
