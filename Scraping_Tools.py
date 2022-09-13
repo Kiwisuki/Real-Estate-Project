@@ -14,10 +14,8 @@ from pymongo import MongoClient
 USER = 'Kiwisuki'
 PASSWORD = 'slaptazodis'
 DB_NAME = 'Real-Estate'
-RAW_DATABASE = f"mongodb+srv://{USER}:{PASSWORD}\
-    @real-estate.cduph5g.mongodb.net/?retryWrites=true&w=majority"
-PROCCESSED_DATABASE = f"mongodb+srv://{USER}:{PASSWORD}\
-    @real-estate.cduph5g.mongodb.net/?retryWrites=true&w=majority"
+RAW_DATABASE = f"mongodb+srv://{USER}:{PASSWORD}@real-estate.cduph5g.mongodb.net/?retryWrites=true&w=majority"
+PROCCESSED_DATABASE = f"mongodb+srv://{USER}:{PASSWORD}@real-estate.cduph5g.mongodb.net/?retryWrites=true&w=majority"
 
 
 def get_html(link:str, depth=0):
