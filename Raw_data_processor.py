@@ -1,9 +1,13 @@
+# coding: utf-8
+'''This script is used to process data from the raw database
+    and insert it to the processed database'''
+import logging
+import pandas as pd
 from pymongo import MongoClient
 from raw_data_processing_tools import process_df
-import pandas as pd
-import logging
 
-logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s', level=logging.INFO, datefmt='%I:%M:%S')
+logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s',\
+     level=logging.INFO, datefmt='%I:%M:%S')
 
 
 USER = 'Kiwisuki'
@@ -14,25 +18,31 @@ PROCCESSED_DATABASE = f"mongodb+srv://{USER}:{PASSWORD}@real-estate.aaszr.mongod
 AD_TYPES = ['butai/vilniuje', 'butu-nuoma/vilniuje']
 
 
-def get_unprocessed_rows(ad_type, n_rows):
+def get_unprocessed_rows(ad_type, limit=100):
+    '''Get unprocessed rows from database'''
     cluster = MongoClient(PROCCESSED_DATABASE)
     database = cluster[DB_NAME]
     collection = database[ad_type]
-    processed_ids = collection.distinct('Id')
+    ids = collection.distinct('Id')
 
     cluster = MongoClient(RAW_DATABASE)
     database = cluster[DB_NAME]
     collection = database[ad_type]
-    rows = list(collection.find({ "Id" : { '$nin': [processed_ids] }}).limit(n_rows))
+    rows = list(collection.find({'Id': {'$nin': ids}}).limit(limit))
+    printer = lambda x: logging.info(f'Id: {x["Id"]}')
+    list(map(printer, rows))
+
     return rows
 
 def insert_rows(rows_to_insert, ad_type, database_query=PROCCESSED_DATABASE):
+    '''Insert rows to database'''
     cluster = MongoClient(database_query)
     database = cluster[DB_NAME]
     collection = database[ad_type]
     collection.insert_many(rows_to_insert)
 
 def processing_epoch():
+    '''Process one epoch of data'''
     for ad_type in AD_TYPES:
         rows = get_unprocessed_rows(ad_type, 10)
         if len(rows) < 10:
@@ -44,6 +54,11 @@ def processing_epoch():
         insert_rows(rows, ad_type)
         logging.info(f'Processed 10 rows, Ad type: {ad_type}')
 
-if __name__ == '__main__':
+def main():
+    '''Main function'''
     while True:
         processing_epoch()
+
+if __name__ == '__main__':
+    main()
+

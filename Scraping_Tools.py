@@ -1,10 +1,9 @@
 # coding: utf-8
+'''This module contains all the functions for scraping data from the website'''
 import re
 import time
 from datetime import datetime
 import logging
-import cchardet
-
 import bs4
 import numpy as np
 import undetected_chromedriver as uc
@@ -19,7 +18,7 @@ RAW_DATABASE = f"mongodb+srv://{USER}:{PASSWORD}@real-estate.cduph5g.mongodb.net
 PROCCESSED_DATABASE = f"mongodb+srv://{USER}:{PASSWORD}@real-estate.cduph5g.mongodb.net/?retryWrites=true&w=majority"
 
 
-def get_html(link, depth=0):
+def get_html(link:str, depth=0):
     """Get html version of page with loaded javascript parts by using undetectable selenium driver
     Args:
         link: a full link for the page to get html from
@@ -46,7 +45,7 @@ def get_html(link, depth=0):
             logging.error(f'Get Error: {link}  \n \n {exception}')
             raise exception
 
-def parse_ad(html_text, **kwargs):
+def parse_ad(html_text:str, **kwargs):
     """Parses ad for attributes available, except: heating
     Args:
         html_text: html text file saved from website
@@ -85,13 +84,13 @@ def parse_ad(html_text, **kwargs):
 
     row['Date scraped'] = datetime.today().strftime('%Y-%m-%d')
     row['Id'] = row['Nuoroda'].split('/')[1]
-    
+
 
     try:
         row['Comment'] = str(soup.find(class_='obj-comment').text)
     except:
         logging.warning(f'No comment for {row["Nuoroda"]}')
-    
+
 
     try:
         row['Broker number'] = str(soup.find(class_='phone_item_0').text)
@@ -136,6 +135,12 @@ def parse_links(html_text):
     return links, thumbs
 
 def get_last_page(html_text):
+    """Scrapes and returns last page number from ad list
+    Args:
+        html_text: html text file saved from website
+    Returns:
+        last_page: a number of last page in ad list
+    """
     soup = bs4.BeautifulSoup(html_text, 'html.parser')
     result = int(soup.find_all(class_='page-bt')[-2].text.replace(' ', '').replace('\n', ''))
     logging.info(f'Last page found: {result}')
@@ -146,6 +151,7 @@ def is_link_used(link, scraped_ids):
     return not any(substring in link for substring in scraped_ids)
 
 def is_valid_url(url):
+    '''Checks if url is valid'''
     regex = re.compile(
             r'^(?:http|ftp)s?://' # http:// or https://
             r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
@@ -155,7 +161,14 @@ def is_valid_url(url):
             r'(?:/?|[/?]\S+)$', re.IGNORECASE)
     return re.match(regex, url) is not None
 
-def filter_links(links, thumbs, scraped_ids):
+def filter_links(links:list, thumbs:list, scraped_ids:list):
+    """Filters out links that have already been scraped
+    Args:
+        links: a list of all ad links found on website
+        scraped_ids: a list of all ad links that have already been scraped
+    Returns:
+        links: a list of all ad links found on website that have not been scraped
+    """
     before = len(links)
     print(scraped_ids)
     scraped_ids = np.array(scraped_ids)
@@ -177,50 +190,55 @@ def filter_links(links, thumbs, scraped_ids):
     logging.debug(f'Before filter: {before}, after: {after}, filtered {before - after} rows')
     return list(links), list(thumbs)
 
-def scrape_type_links(nt):
+def scrape_type_links(ad_type:str):
     """Scrapes and returns all ad links found on all city pages
     Args:
         nt: what type of ad to scrape(house, flat, etc)
     Returns:
         city_links: a list of all city ad links found on Aruodas.lt
     """
-    nts = ['butai', 'butu-nuoma', 'namai', 'patalpos', 'namu-nuoma', 'patalpu-nuoma', 'butai/vilniuje', 'butu-nuoma/vilniuje']
-    if nt not in nts:
+    ad_types = ['butai', 'butu-nuoma', 'namai', 'patalpos',\
+                'namu-nuoma', 'patalpu-nuoma', 'butai/vilniuje', 'butu-nuoma/vilniuje']
+    if ad_type not in ad_types:
         raise ValueError('Invalid type')
 
     city_links = []
     city_thumbs = []
 
     call = 'https://www.aruodas.lt/{}/puslapis/{}/'
-    city_html = get_html(f'https://www.aruodas.lt/{nt}/puslapis/1/')
+    city_html = get_html(f'https://www.aruodas.lt/{ad_type}/puslapis/1/')
     last_page = get_last_page(city_html)
 
     for i in range(1, last_page+1):
-        txt = get_html(call.format(nt, i))
+        txt = get_html(call.format(ad_type, i))
         links, thumbs = parse_links(txt)
         city_links.extend(links)
         city_thumbs.extend(thumbs)
     return city_links, city_thumbs
 
 def get_ids(nt):
+    '''Returns a list of all scraped ids'''
     with MongoClient(RAW_DATABASE) as cluster:
         db = cluster[DB_NAME]
         collection = db[nt]
         return [x['Id'] for x in collection.find({}, {'Id':1, '_id':0})]
 
 def scrape_ad(link, **kwargs):
+    '''Scrapes a single ad'''
     txt = get_html(link)
     row = parse_ad(txt, **kwargs)
     logging.info(f'Scraped {link}')
     return row
 
-def insert_to_db(row, collection_name, DATABASE=RAW_DATABASE):
-    with MongoClient(DATABASE) as cluster:
+def insert_to_db(row, collection_name, database=RAW_DATABASE):
+    '''Inserts a single ad to database'''
+    with MongoClient(database) as cluster:
         db = cluster[DB_NAME]
         collection = db[collection_name]
         collection.insert_one(row)
 
 def prepoc_row(row):
+    '''Prepares a single ad for insertion to database'''
     new = {}
     for key, value in row.items():
         new_key = " ".join(key.split()).replace(':','')

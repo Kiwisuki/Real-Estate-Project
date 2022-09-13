@@ -33,19 +33,12 @@
 # + Address: string
 
 import re
-from datetime import datetime
-
-from pymongo import MongoClient
-import pandas as pd
-import numpy as np
-from scipy.stats import norm
 import warnings
 import math
-import math
-
+import pandas as pd
+import numpy as np
 from geopy.extra.rate_limiter import RateLimiter
 from geopy.geocoders import Nominatim
-
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.filterwarnings('ignore')
@@ -55,6 +48,7 @@ PASSWORD = 'slaptazodis'
 DB_NAME = 'Real-Estate'
 RAW_DATABASE = f"mongodb+srv://{USER}:{PASSWORD}@real-estate.cduph5g.mongodb.net/?retryWrites=true&w=majority"
 PROCCESSED_DATABASE = f"mongodb+srv://{USER}:{PASSWORD}@real-estate.aaszr.mongodb.net/?retryWrites=true&w=majority"
+
 OLD_COLS = ['_id', 'Namo numeris', 'Buto numeris', 'Plotas', 'Kambarių sk.',
        'Aukštas', 'Aukštų sk.', 'Metai', 'Pastato tipas', 'Šildymas',
        'Įrengimas', 'Pastato energijos suvartojimo klasė', 'Ypatybės',
@@ -99,12 +93,14 @@ district = lambda x : x.split(',')[1]
 extract_views = lambda x: int(x.split('/')[0])
 
 def prepoc_str(x):
+    '''removes empty spaces'''
     if isinstance(x, str):
         return " ".join(x.split())
     else:
         return x
 
 def area(x):
+    '''extracts area from string'''
     try:
         x = re.sub('[^0-9.]', "", x.replace(",","."))
         if x == '':
@@ -114,6 +110,7 @@ def area(x):
         return np.nan
 
 def distance(x):
+    '''extracts distance from string'''
     if pd.isnull(x):
         return np.NaN
     d = re.sub('[^0-9.]', "", x.replace(",","."))
@@ -122,6 +119,7 @@ def distance(x):
     return float(d)
 
 def heating(x):
+    '''extracts heating type from string'''
     try:
         x = x.split('~')[0]
         x = x.replace('.','#')
@@ -133,6 +131,7 @@ def heating(x):
         return np.nan
     
 def splitter(x):
+    '''splits string into list'''
     x = x.replace('Š', 'S')
     x = x.replace('Ž', 'Z')
     r = re.findall('[A-Z][^A-Z]*', x)
@@ -142,19 +141,22 @@ def splitter(x):
     return rez
 
 def snipper(x):
+    '''splits string into list'''
     x = x.lower()
     x = x.replace(' ','')
     return x.split(',')
 
 def dorm(x):
+    '''return whether flat is dormitory'''
     return ('bendrab' in x.lower())*1
 
 def fix_address(x):
+    '''summarizes address, removes street name'''
     a = x.split(',')
     return f'{a[0]}, {a[1]}'
 
 def process_df(df):
-
+    """Processes dataframe"""
     for col in OLD_COLS:
         if col not in df:
             df[col] = np.nan
