@@ -172,6 +172,7 @@ def process_df(df):
     df['House_number'].fillna('', inplace=True)
     df['Flat_number'].fillna('', inplace=True)
     df['Saved'].fillna('0',inplace=True)
+    df['Crimes'].fillna('-1',inplace=True)
 
     df['Price'] = df['Price'].apply(strip_euro)
     df['Area'] = df['Area'].astype(str)
