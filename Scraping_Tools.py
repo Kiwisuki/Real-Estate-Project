@@ -157,23 +157,22 @@ def is_valid_url(url):
 
 def filter_links(links, thumbs, scraped_ids):
     before = len(links)
-    try:
-        scraped_ids = np.array(scraped_ids)
-        links = np.array(links)
-        thumbs = np.array(thumbs)
+    print(scraped_ids)
+    scraped_ids = np.array(scraped_ids)
+    links = np.array(links)
 
-        
-        bool_arr = np.array([is_link_used(row, scraped_ids) for row in links])
-        links = links[bool_arr]
-        thumbs = thumbs[bool_arr]
+    thumbs = [t for t in thumbs if t != ''] # ! No clue how these values end up here
+    thumbs = np.array(thumbs)
+    
+    used_filter = np.array([is_link_used(row, scraped_ids) for row in links])
+    valid_filter = np.array([is_valid_url(row) for row in links])
 
-        
-        bool_arr = np.array([is_valid_url(row) for row in links])
-        links = links[bool_arr]
-        thumbs = thumbs[bool_arr]
-    except IndexError:
-        links = []
-        thumbs = []
+    final_filter = used_filter & valid_filter
+    print (links)
+    print(thumbs)
+    links = links[final_filter]
+    thumbs = thumbs[final_filter]
+
     after = len(links)
     logging.debug(f'Before filter: {before}, after: {after}, filtered {before - after} rows')
     return list(links), list(thumbs)
