@@ -19,8 +19,7 @@ def main():
             random.shuffle(links)
             count = 0
             for link, thumb in zip(links, thumbs):
-                logging.info(f'{len(links) - count} ads left to scrape,\
-                     scraped {count} ads, Type: {nt}')
+                logging.info(f'{len(links) - count} ads left, scraped {count} ads, Type: {nt}')
                 try:
                     ad_row = scrape_ad(link, AdType=nt, Thumbnail=thumb)
                     ad_row = prepoc_row(ad_row)
@@ -35,3 +34,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+

@@ -147,6 +147,7 @@ def get_last_page(html_text):
     return result
 
 def is_link_used(link, scraped_ids):
+    '''Checks if link is already scraped'''
     # Helper method
     return not any(substring in link for substring in scraped_ids)
 
