@@ -19,5 +19,10 @@ def home_page():
              value = f'Paskaičiuota vertė: {prediction} €, skelbime nurodyta kaina: {price} €')
     return render_template('index.html', value = 'Laukiama nuorodos..')
 
+@app.errorhandler(500)
+def page_not_found(e):
+    # note that we set the 500 status explicitly
+    return render_template('500.html'), 500
+
 if __name__ == '__main__':
-    app.run(debug=True, threaded=True)
+    app.run(threaded=True)
