@@ -5,10 +5,6 @@ import re
 from prod import get_prediction
 urllib3.disable_warnings()
 
-def get_id(x):
-    id = re.search('1-[0-9][0-9][0-9][0-9][0-9][0-9][0-9]', x)[0]
-    return id
-
 app = Flask(__name__,
             static_url_path='',
             static_folder='web/static',
@@ -18,8 +14,7 @@ app = Flask(__name__,
 def home_page():
     if request.method == 'POST':
         url = request.form['url']
-        id_ = get_id(url)
-        prediction, price = get_prediction(id_)
+        prediction, price = get_prediction(url)
         return render_template('index.html',\
              value = f'Paskaičiuota vertė: {prediction} €, skelbime nurodyta kaina: {price} €')
     return render_template('index.html', value = 'Laukiama nuorodos..')

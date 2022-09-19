@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 import warnings
 import pickle
+import re
 
 from scraping_tools import scrape_ad
 from raw_data_processing_tools import process_df
@@ -82,7 +83,7 @@ def prep(x):
         rez+=i + ';'
     return rez
 
-def predict(row):
+def predict(row, fold):
     df = pd.DataFrame([row])
 
     with open("rent_knn.pickle", "rb") as f:
@@ -142,18 +143,33 @@ def predict(row):
     df = df[COLUMNS]
     X = df.drop(['Price' ,'eur_m2'], axis=1)
     y  = df['Price']
-    with open("model.pickle", "rb") as f:
+    with open(f"model_{fold}.pickle", "rb") as f:
         model = pickle.load(f)
 
     x = X.values[0]
     y = y.values[0]
     return int(round(np.expm1(model.predict(x)), -2)), int(y)
 
+def get_id(x):
+    id_ = re.search('1-[0-9][0-9][0-9][0-9][0-9][0-9][0-9]', x)[0]
+    return id_
+
+def get_fold(id_):
+    with open("fold_ids.pickle", "rb") as f:
+        ids = pickle.load(f)
+    for i in range(len(ids)):
+        if id_ in ids[i]:
+            return i+1
+    return 1
+
 def get_prediction(link):
-    row = scrape_ad(link)
+    id_ = get_id(link)
+    url = f'https://www.aruodas.lt/{id_}'
+    row = scrape_ad(url)
     row = prepoc_row(row)
     row = pd.DataFrame([row])
     row = process_df(row)
     row = row.to_dict('records')[0]
-    prediction, real = predict(row)
+    fold = get_fold(id_)
+    prediction, real = predict(row, fold)
     return prediction, real
