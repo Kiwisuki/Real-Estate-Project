@@ -151,7 +151,7 @@ def predict(row, fold):
     return int(round(np.expm1(model.predict(x)), -2)), int(y)
 
 def get_id(x):
-    id_ = re.search('1-[0-9][0-9][0-9][0-9][0-9][0-9][0-9]', x)[0]
+    id_ = re.search('[0-9]-[0-9][0-9][0-9][0-9][0-9][0-9][0-9]', x)[0]
     return id_
 
 def get_fold(id_):

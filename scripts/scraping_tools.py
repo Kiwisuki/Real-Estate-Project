@@ -199,7 +199,7 @@ def scrape_type_links(ad_type:str):
         city_links: a list of all city ad links found on Aruodas.lt
     """
     ad_types = ['butai', 'butu-nuoma', 'namai', 'patalpos',\
-                'namu-nuoma', 'patalpu-nuoma', 'butai/vilniuje', 'butu-nuoma/vilniuje']
+                'namu-nuoma', 'patalpu-nuoma', 'butai/vilniuje', 'butu-nuoma/vilniuje', 'butai/kaune', 'butu-nuoma/kaune']
     if ad_type not in ad_types:
         raise ValueError('Invalid type')
 
