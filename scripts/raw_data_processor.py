@@ -2,12 +2,13 @@
 '''This script is used to process data from the raw database
     and insert it to the processed database'''
 import logging
+import time
 import pandas as pd
 from pymongo import MongoClient
 from raw_data_processing_tools import process_df
 
 logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s',\
-     level=logging.INFO, datefmt='%I:%M:%S')
+     level=logging.DEBUG, datefmt='%I:%M:%S')
 
 
 USER = 'Kiwisuki'
@@ -15,7 +16,7 @@ PASSWORD = 'slaptazodis'
 DB_NAME = 'Real-Estate'
 RAW_DATABASE = f"mongodb+srv://{USER}:{PASSWORD}@real-estate.cduph5g.mongodb.net/?retryWrites=true&w=majority"
 PROCCESSED_DATABASE = f"mongodb+srv://{USER}:{PASSWORD}@real-estate.aaszr.mongodb.net/?retryWrites=true&w=majority"
-AD_TYPES = ['butai/vilniuje', 'butu-nuoma/vilniuje']
+AD_TYPES = ['butai/vilniuje', 'butu-nuoma/vilniuje', 'butai/kaune', 'butu-nuoma/kaune']
 
 
 def get_unprocessed_rows(ad_type, limit=100):
@@ -46,6 +47,8 @@ def processing_epoch():
     for ad_type in AD_TYPES:
         rows = get_unprocessed_rows(ad_type, 10)
         if len(rows) < 10:
+            logging.info(f'No new data for {ad_type}')
+            time.sleep(600)
             continue
         df = pd.DataFrame(rows)
         df = process_df(df)
