@@ -84,7 +84,7 @@ def prep(x):
     return rez
 
 def prep_data_for_model(df):
-    with open("pickles/rent_knn.pickle", "rb") as f:
+    with open("rent_knn.pickle", "rb") as f:
         neigh = pickle.load(f)
 
     df['eur_m2_rent_p'] = neigh.predict(df[['Latitude', 'Longitude']])
@@ -119,7 +119,7 @@ def prep_data_for_model(df):
 
     df['Photos'] = df['Photos'].apply(len)
     df['Crimes'].replace(-1, np.nan, inplace=True)
-    df['Predicted rent'] = df['Predicted rent']/0.005649405983081727
+    df['Predicted rent'] = df['Predicted rent']
 
     df.set_index('_id', inplace=True)
 
@@ -189,5 +189,5 @@ def get_prediction(link):
     row = process_df(row)
     row = row.to_dict('records')[0]
     fold = get_fold(id_)
-    rent, sale, real = predict(row, fold)
-    return rent, sale, real
+    prediction, real = predict(row, fold)
+    return prediction, real

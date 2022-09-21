@@ -14,13 +14,9 @@ app = Flask(__name__,
 def home_page():
     if request.method == 'POST':
         url = request.form['url']
-        rent, price, real = get_prediction(url)
-        if real > 10000:
-            roi = round((rent*12) / real * 100, 2)
-            return render_template('index.html',\
-                value = f'Paskaičiuota vertė: {price} €, paskaičiuota nuomos kaina: {rent} €, kaina skelbime: {real} €, metinė grąža: {roi} %')
+        prediction, price = get_prediction(url)
         return render_template('index.html',\
-            value = f'Paskaičiuota vertė: {price} €, paskaičiuota nuomos kaina: {rent} €, kaina skelbime: {real} €')
+             value = f'Paskaičiuota vertė: {prediction} €, skelbime nurodyta kaina: {price} €')
     return render_template('index.html', value = 'Laukiama nuorodos..')
 
 @app.errorhandler(500)
