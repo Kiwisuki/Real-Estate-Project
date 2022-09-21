@@ -11,7 +11,7 @@ logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s', level=loggin
 
 def main():
     '''Main function'''
-    nts = ['butai/vilniuje', 'butu-nuoma/vilniuje']
+    nts = ['butai/vilniuje', 'butu-nuoma/vilniuje', 'butai/kaune', 'butu-nuoma/kaune']
     while True:
         for nt in nts:
             links, thumbs = scrape_type_links(nt)
