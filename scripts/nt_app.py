@@ -18,7 +18,7 @@ def home_page():
         if real > 10000:
             roi = round((rent*12) / real * 100, 2)
             return render_template('index.html',\
-                value = f'Paskaičiuota vertė: {price} €, paskaičiuota nuomos kaina: {rent} €, kaina skelbime: {real} €, metinė grąža: {roi} %')
+                value = f'Paskaičiuota vertė: {price} €, paskaičiuota nuomos kaina: {rent} €, kaina skelbime: {real} €, numatoma metinė grąža: {roi} %')
         return render_template('index.html',\
             value = f'Paskaičiuota vertė: {price} €, paskaičiuota nuomos kaina: {rent} €, kaina skelbime: {real} €')
     return render_template('index.html', value = 'Laukiama nuorodos..')
